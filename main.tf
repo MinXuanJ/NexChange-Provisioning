@@ -28,11 +28,17 @@ module "jenkins" {
   private_key_local_address = var.private_key_local_address
 }
 
-# module "eks" {
-#   source = "./eks"
-#   vpc_id = module.networking.vpc_id
-#   cluster_name = var.cluster_name
-# }
+
+
+module "eks" {
+  source = "./eks"
+  vpc_id = module.networking.vpc_id
+  private_subnets_id = module.networking.private_subnets_id
+  cluster_version = var.cluster_version
+  cluster_name = var.cluster_name
+  jenkins_role_arn = module.jenkins.jenkins_role_arn
+  jenkins_security_group_ids = [module.security_group.sg_ec2_ssh_http_id, module.security_group.sg_ec2_jenkins_port_8080_id]
+}
 
 
 output "vpc_id" {

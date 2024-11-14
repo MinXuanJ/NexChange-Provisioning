@@ -15,6 +15,11 @@ output "public_subnets_ip" {
   description = "The IPs of the public subnet" 
 }
 
+output "private_subnets_id" {
+  value = aws_subnet.NexChange_dev_private_subtets[*].id
+  description = "The IDs of the private subnet"
+}
+
 # Setup VPC
 resource "aws_vpc" "NexChange_dev_vpc_1_sg" {
   cidr_block = var.vpc_cidr
@@ -64,6 +69,16 @@ resource "aws_internet_gateway" "NexChange_dev_igw" {
     IsDefault = "true"
   }
 }
+# Setup EIP
+resource "aws_eip" "NexChange_dev_eip" {
+  vpc = true
+}
+
+# Set up NAT
+resource "aws_nat_gateway" "NexChange_dev_nat" {
+  allocation_id = aws_eip.NexChange_dev_eip.id
+  subnet_id = element(aws_subnet.NexChange_dev_public_subtets[*].id, 0)
+}
 
 # Setup Public Route Table
 resource "aws_route_table" "NexChange_dev_public_route_table" {
@@ -84,12 +99,16 @@ resource "aws_route_table_association" "NexChange_dev_public_route_table_subnet_
   count = length(aws_subnet.NexChange_dev_public_subtets)
   subnet_id = element(aws_subnet.NexChange_dev_public_subtets[*].id, count.index)
   route_table_id = aws_route_table.NexChange_dev_public_route_table.id
-  
 }
 
 # Private Route Table
 resource "aws_route_table" "NexChange_dev_private_route_table" {
   vpc_id = aws_vpc.NexChange_dev_vpc_1_sg.id
+  route { 
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.NexChange_dev_nat.id
+  }
+
   tags = {
     Name = "NexChange_dev_private_route_table"
     Environment = "dev"
@@ -97,7 +116,7 @@ resource "aws_route_table" "NexChange_dev_private_route_table" {
   }
 }
 
-# Private Subnet Association
+# Private Subnet RouteTable Association
 resource "aws_route_table_association" "NexChange_dev_private_route_table_subnet_association" {
   count = length(aws_subnet.NexChange_dev_private_subtets)
   subnet_id = aws_subnet.NexChange_dev_private_subtets[count.index].id

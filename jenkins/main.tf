@@ -18,6 +18,16 @@ output "jenkins_server_public_ip" {
   description = "The public Elastic IP address of the Jenkins server"
 }  
 
+output "jenkins_security_group_id" {
+  value = aws_instance.jenkins_server.vpc_security_group_ids
+  description = "The security group ID associated with the Jenkins server"
+}
+
+output "jenkins_role_arn" {
+  value       = data.aws_iam_role.jenkins_role.arn
+  description = "The ARN of the Jenkins IAM role"
+}
+
 # # 输出Jenkins服务器的实例ID
 # output "jenkins_server_instance_id" {
 #   value = aws_instance.jenkins_server.id
@@ -42,6 +52,10 @@ output "jenkins_server_public_ip" {
 # #   description = "The EBS volume ID attached to the Jenkins server"
 # # }
 
+data "aws_iam_role" "jenkins_role" {
+  name = "Jenkins_EC2_Role"
+}
+
 resource "aws_instance" "jenkins_server" {
   ami = var.ami_id
   instance_type = var.instance_type
@@ -50,7 +64,7 @@ resource "aws_instance" "jenkins_server" {
   key_name = "NexChange-dev-devops-key"
   vpc_security_group_ids = var.security_group_ids
   user_data = var.user_data
-
+  iam_instance_profile = "Jenkins_EC2_Role"
 
   tags = {
     Name = "NexChange Jenkins Server: Ubuntu EC2"
@@ -61,6 +75,9 @@ resource "aws_instance" "jenkins_server" {
     http_tokens = "required"
   }
 }
+
+
+
 
 resource "aws_key_pair" "jenkins_server_public_key" {
   key_name = "NexChange-dev-devops-key"

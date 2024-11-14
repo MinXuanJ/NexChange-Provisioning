@@ -51,3 +51,8 @@ variable "cluster_name" {
   type = string
   description = "Name of EKS Cluster"
 }
+
+variable "cluster_version" {
+  type = string
+  description = "Version of EKS Cluster"
+}
